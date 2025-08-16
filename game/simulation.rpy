@@ -63,7 +63,7 @@ init python:
 
     def simulate_game(home_team, away_team):
         """
-        Simulates a detailed, inning-by-inning game between two teams.
+        Simulates a detailed, inning-by-inning game between two teams, now with stat tracking.
         """
         # === 1. Pre-game Setup ===
         game_log = []
@@ -95,43 +95,58 @@ init python:
                 log_entry = "{}、{}の打席: {}".format(batter.name, away_team.name, result)
                 game_log.append(log_entry)
 
+                # Stat tracking for non-walks
+                if result != "四球":
+                    batter.at_bats += 1
+
                 runs_this_play = 0
                 if result == "安打":
+                    batter.hits += 1
                     if bases[2]: runs_this_play += 1; bases[2] = None
                     if bases[1]: bases[2] = bases[1]; bases[1] = None
                     if bases[0]: bases[1] = bases[0]
                     bases[0] = batter
                 elif result == "二塁打":
+                    batter.hits += 1
                     if bases[2]: runs_this_play += 1; bases[2] = None
                     if bases[1]: runs_this_play += 1; bases[1] = None
                     if bases[0]: bases[2] = bases[0]; bases[0] = None
                     bases[1] = batter
                 elif result == "三塁打":
+                    batter.hits += 1
                     runs_this_play += sum(1 for b in bases if b)
                     bases = [None, None, batter]
                 elif result == "本塁打":
+                    batter.hits += 1
+                    batter.home_runs += 1
                     runs_this_play += sum(1 for b in bases if b) + 1
                     bases = [None, None, None]
                     highlight_msg = "{}回表、{}が{}から{}ランホームラン！".format(inning, batter.name, home_pitcher.name, runs_this_play)
                     highlights.append(highlight_msg)
                     game_log.append(highlight_msg)
                 elif result == "四球":
+                    batter.walks += 1
+                    home_pitcher.walks_issued += 1
                     if bases[0] and bases[1] and bases[2]: runs_this_play += 1
                     elif bases[0] and bases[1]: bases[2] = bases[1]
                     elif bases[0]: bases[1] = bases[0]
                     bases[0] = batter
                 elif result == "三振":
                     outs += 1
+                    home_pitcher.strikeouts += 1
+                    home_pitcher.outs_recorded += 1
                 elif result == "アウト":
                     outs += 1
+                    home_pitcher.outs_recorded += 1
 
                 if runs_this_play > 0:
+                    batter.rbis += runs_this_play
+                    home_pitcher.earned_runs += runs_this_play
                     away_score += runs_this_play
                     score_msg = "{}が{}点獲得！ 現在のスコア: {} {} - {} {}".format(away_team.name, runs_this_play, home_team.name, home_score, away_score, away_team.name)
                     game_log.append(score_msg)
                     if runs_this_play > 1:
                         highlights.append(score_msg)
-
 
                 away_batting_order_index = (away_batting_order_index + 1) % len(away_batters)
                 if outs == 3:
@@ -139,7 +154,7 @@ init python:
 
             # --- Home Team's At-Bat (Bottom of the inning) ---
             if inning >= 9 and home_score > away_score:
-                break # Walk-off win, no need to play bottom of the 9th.
+                break
 
             game_log.append("▲ {}の攻撃".format(home_team.name))
             outs = 0
@@ -151,37 +166,52 @@ init python:
                 log_entry = "{}、{}の打席: {}".format(batter.name, home_team.name, result)
                 game_log.append(log_entry)
 
+                if result != "四球":
+                    batter.at_bats += 1
+
                 runs_this_play = 0
                 if result == "安打":
+                    batter.hits += 1
                     if bases[2]: runs_this_play += 1; bases[2] = None
                     if bases[1]: bases[2] = bases[1]; bases[1] = None
                     if bases[0]: bases[1] = bases[0]
                     bases[0] = batter
                 elif result == "二塁打":
+                    batter.hits += 1
                     if bases[2]: runs_this_play += 1; bases[2] = None
                     if bases[1]: runs_this_play += 1; bases[1] = None
                     if bases[0]: bases[2] = bases[0]; bases[0] = None
                     bases[1] = batter
                 elif result == "三塁打":
+                    batter.hits += 1
                     runs_this_play += sum(1 for b in bases if b)
                     bases = [None, None, batter]
                 elif result == "本塁打":
+                    batter.hits += 1
+                    batter.home_runs += 1
                     runs_this_play += sum(1 for b in bases if b) + 1
                     bases = [None, None, None]
                     highlight_msg = "{}回裏、{}が{}から{}ランホームラン！".format(inning, batter.name, away_pitcher.name, runs_this_play)
                     highlights.append(highlight_msg)
                     game_log.append(highlight_msg)
                 elif result == "四球":
+                    batter.walks += 1
+                    away_pitcher.walks_issued += 1
                     if bases[0] and bases[1] and bases[2]: runs_this_play += 1
                     elif bases[0] and bases[1]: bases[2] = bases[1]
                     elif bases[0]: bases[1] = bases[0]
                     bases[0] = batter
                 elif result == "三振":
                     outs += 1
+                    away_pitcher.strikeouts += 1
+                    away_pitcher.outs_recorded += 1
                 elif result == "アウト":
                     outs += 1
+                    away_pitcher.outs_recorded += 1
 
                 if runs_this_play > 0:
+                    batter.rbis += runs_this_play
+                    away_pitcher.earned_runs += runs_this_play
                     home_score += runs_this_play
                     score_msg = "{}が{}点獲得！ 現在のスコア: {} {} - {} {}".format(home_team.name, runs_this_play, home_team.name, home_score, away_score, away_team.name)
                     game_log.append(score_msg)
@@ -193,18 +223,24 @@ init python:
                     game_log.append("チェンジ")
 
                 if inning >= 9 and home_score > away_score:
-                    break # Walk-off win
+                    break
 
             inning += 1
 
         # === 3. Post-game Updates ===
         game_log.append("試合終了！")
+        result_str = "{} {} - {} {}".format(home_team.name, home_score, away_score, away_team.name)
+
         if home_score > away_score:
             home_team.wins += 1
             away_team.losses += 1
+            if home_pitcher: home_pitcher.wins += 1
+            if away_pitcher: away_pitcher.losses += 1
         elif away_score > home_score:
             away_team.wins += 1
             home_team.losses += 1
+            if away_pitcher: away_pitcher.wins += 1
+            if home_pitcher: home_pitcher.losses += 1
         else:
             home_team.draws += 1
             away_team.draws += 1
@@ -216,16 +252,23 @@ init python:
             fatigue_gain = 80 - (away_pitcher.stamina / 4.0)
             away_pitcher.fatigue = min(100, away_pitcher.fatigue + fatigue_gain)
 
-        # === 4. Return Game Data ===
-        result_str = "{} {} - {} {}".format(home_team.name, home_score, away_score, away_team.name)
-
-        # Select top 3 highlights
-        top_highlights = highlights[:3]
+        # === 4. Save to Game History & Return Data ===
+        game_summary = {
+            "result_str": result_str,
+            "home_team": home_team.name,
+            "away_team": away_team.name,
+            "home_score": home_score,
+            "away_score": away_score,
+            "highlights": highlights[:3]
+        }
+        persistent.game_history.append(game_summary)
+        # Keep only the last 10 games
+        persistent.game_history = persistent.game_history[-10:]
 
         return {
             "result_str": result_str,
             "home_score": home_score,
             "away_score": away_score,
             "game_log": game_log,
-            "highlights": top_highlights
+            "highlights": highlights[:3]
         }

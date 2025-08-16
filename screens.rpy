@@ -305,6 +305,8 @@ screen navigation():
 
             textbutton _("ヒストリー") action ShowMenu("history")
 
+            textbutton _("成績") action ShowMenu("dashboard_screen")
+
             textbutton _("セーブ") action ShowMenu("save")
 
         textbutton _("ロード") action ShowMenu("load")
@@ -1605,13 +1607,13 @@ style slider:
     variant "small"
     ysize gui.slider_size
     base_bar Frame("gui/phone/slider/horizontal_[prefix_]bar.png", gui.slider_borders, tile=gui.slider_tile)
-    thumb "gui/phone/slider/horizontal_[prefix_]thumb.png"
+    thumb "gui/slider/horizontal_[prefix_]thumb.png"
 
 style vslider:
     variant "small"
     xsize gui.slider_size
-    base_bar Frame("gui/phone/slider/vertical_[prefix_]bar.png", gui.vslider_borders, tile=gui.slider_tile)
-    thumb "gui/phone/slider/vertical_[prefix_]thumb.png"
+    base_bar Frame("gui/slider/vertical_[prefix_]bar.png", gui.vslider_borders, tile=gui.slider_tile)
+    thumb "gui/slider/vertical_[prefix_]thumb.png"
 
 style slider_vbox:
     variant "small"
