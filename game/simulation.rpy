@@ -66,6 +66,16 @@ init python:
             home_team.draws += 1
             away_team.draws += 1
 
+        # === 4. Post-game Fatigue Updates ===
+        if home_pitcher:
+            # Fatigue gain is inversely related to stamina. Higher stamina means less fatigue.
+            fatigue_gain = 80 - (home_pitcher.stamina / 4.0)
+            home_pitcher.fatigue = min(100, home_pitcher.fatigue + fatigue_gain)
+
+        if away_pitcher:
+            fatigue_gain = 80 - (away_pitcher.stamina / 4.0)
+            away_pitcher.fatigue = min(100, away_pitcher.fatigue + fatigue_gain)
+
         # Return a formatted string with the game's result for display.
         result_str = "{} {} - {} {}".format(home_team.name, home_score, away_score, away_team.name)
         return result_str

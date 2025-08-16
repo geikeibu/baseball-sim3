@@ -49,6 +49,18 @@ screen pennant_screen():
 
 # --- Game Logic ---
 
+init python:
+    def rest_all_pitchers():
+        """
+        Reduces fatigue for every pitcher on every team to simulate a day of rest.
+        """
+        if persistent.teams:
+            for team in persistent.teams:
+                for pitcher in team.get_pitchers():
+                    # Each day of rest reduces fatigue by a set amount.
+                    # We use max() to ensure fatigue doesn't drop below 0.
+                    pitcher.fatigue = max(0, pitcher.fatigue - 30)
+
 # Default variables that will hold the game's state.
 default game_result = ""
 default schedule = []
@@ -61,11 +73,14 @@ label start:
 label start_season:
     # This block runs at the beginning of each season.
     python:
-        # Reset the win/loss/draw records for every team.
+        # Reset wins, losses, rotation, and fatigue for all teams.
         for t in persistent.teams:
             t.wins = 0
             t.losses = 0
             t.draws = 0
+            t.rotation_index = 0
+            for p in t.get_pitchers():
+                p.fatigue = 0
 
         # Generate the season schedule.
         schedule = []
@@ -89,7 +104,10 @@ label start_season:
 label play_next_game:
     # This block is called when the player clicks "Simulate Next Game".
     python:
-        # Get the next matchup from the front of the schedule list.
+        # First, process a day of rest for all pitchers in the league.
+        rest_all_pitchers()
+
+        # Then, get the next matchup from the front of the schedule list.
         home_team, away_team = schedule.pop(0)
         # Simulate the game and store the outcome string.
         game_result = simulate_game(home_team, away_team)
