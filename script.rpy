@@ -38,14 +38,25 @@ screen pennant_screen():
                         text str(team.losses) xsize 60
                         text str(team.draws) xsize 60
 
-        # Show the "Next Game" button only if there are games left in the schedule.
-        if schedule:
-            textbutton "Simulate Next Game" action Call("play_next_game")
-        else:
-            # When the season is over, show end-of-season options.
-            text "Season Finished!" size 28
-            textbutton "Restart Season" action Call("reset_and_start")
-            textbutton "Main Menu" action MainMenu()
+        # Game action buttons
+        hbox:
+            spacing 20
+            # Show the "Next Game" button only if there are games left in the schedule.
+            if schedule:
+                textbutton "Simulate Next Game" action Call("play_next_game")
+
+            # Show the "View Log" button if a log exists for the previous game.
+            if persistent.last_game_log:
+                textbutton "試合ログを見る" action Show("game_log_screen")
+
+        # When the season is over, show end-of-season options.
+        if not schedule:
+            vbox:
+                spacing 15
+                text "Season Finished!" size 28
+                textbutton "Restart Season" action Call("reset_and_start")
+                textbutton "Main Menu" action MainMenu()
+
 
 # --- Game Logic ---
 
@@ -64,6 +75,9 @@ init python:
 # Default variables that will hold the game's state.
 default game_result = ""
 default schedule = []
+default persistent.last_game_log = []
+default persistent.last_game_highlights = []
+
 
 # The game's entry point.
 label start:
@@ -94,8 +108,11 @@ label start_season:
         # Shuffle the schedule for variety each season.
         renpy.random.shuffle(schedule)
 
-        # Set an initial message for the result display.
+        # Set an initial message for the result display and clear previous game logs.
         game_result = "The season is about to begin!"
+        persistent.last_game_log = []
+        persistent.last_game_highlights = []
+
 
     # Show the main pennant screen to the player.
     call screen pennant_screen
@@ -109,8 +126,14 @@ label play_next_game:
 
         # Then, get the next matchup from the front of the schedule list.
         home_team, away_team = schedule.pop(0)
-        # Simulate the game and store the outcome string.
-        game_result = simulate_game(home_team, away_team)
+        # Simulate the game and store the outcome.
+        sim_result = simulate_game(home_team, away_team)
+
+        # Store the results for display on the screen.
+        game_result = sim_result["result_str"]
+        persistent.last_game_log = sim_result["game_log"]
+        persistent.last_game_highlights = sim_result["highlights"]
+
 
     # Re-display the screen to show the updated results and standings.
     call screen pennant_screen
