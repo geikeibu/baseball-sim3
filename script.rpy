@@ -1,56 +1,103 @@
-﻿# このファイルにはゲームのスクリプトを記述します。
+# Define the screens for our game UI
+screen pennant_screen():
+    tag menu # This ensures the main menu is hidden when this screen is shown.
 
-# Ren'Py のスクリプトは、インデント（行頭の空白）によってブロック分けされています。
-# インデントは Tab や Shift + Tab によって調整することができます。
+    # A vertical box layout to arrange our UI elements.
+    vbox:
+        xalign 0.5 # Center horizontally on the screen
+        yalign 0.5 # Center vertically on the screen
+        spacing 15 # Space between elements
 
+        # Game Title
+        text "Pennant Race" size 40
 
-# まず最初に、ゲームに使うキャラクター（台詞を表示するオブジェクト）を定義します。
-# 一番目のパラメーターは、テキストウィンドウに表示されるキャラクターの名前です。
-# color のパラメーターを追加すると、キャラクターの名前を色付けできます。
+        # Display the result of the last simulated game.
+        if game_result:
+            text "Result: [game_result]"
 
-define e = Character('Eileen', color="#c8ffc8")
+        # A frame to neatly contain the league standings.
+        frame:
+            padding (15, 15)
+            vbox:
+                spacing 5
+                text "League Standings"
+                # Standings Table Header
+                hbox:
+                    spacing 10
+                    text "Team" xsize 250
+                    text "Wins" xsize 60
+                    text "Losses" xsize 60
+                    text "Draws" xsize 60
+                # We sort the teams by wins in descending order for the standings.
+                $ sorted_teams = sorted(persistent.teams, key=lambda t: t.wins, reverse=True)
+                for team in sorted_teams:
+                    hbox:
+                        spacing 10
+                        text team.name xsize 250
+                        text str(team.wins) xsize 60
+                        text str(team.losses) xsize 60
+                        text str(team.draws) xsize 60
 
+        # Show the "Next Game" button only if there are games left in the schedule.
+        if schedule:
+            textbutton "Simulate Next Game" action Call("play_next_game")
+        else:
+            # When the season is over, show end-of-season options.
+            text "Season Finished!" size 28
+            textbutton "Restart Season" action Call("reset_and_start")
+            textbutton "Main Menu" action MainMenu()
 
-# label ステートメント（文）はゲームの処理をまとめてラベル付けします。
-# ラベル間の移動は jump ステートメントか call ステートメントを使います。
+# --- Game Logic ---
 
-# ゲームは start ラベルからスタートします。
+# Default variables that will hold the game's state.
+default game_result = ""
+default schedule = []
 
+# The game's entry point.
 label start:
+    # We immediately jump to the season setup.
+    jump start_season
 
-    # 背景を表示します。デフォルトではプレースホルダー（仮画像）を使用しますが、
-    # images ディレクトリーにファイル（ファイル名は "bg room.png" や "bg room.jpg"）
-    # を追加することで表示できます。
+label start_season:
+    # This block runs at the beginning of each season.
+    python:
+        # Reset the win/loss/draw records for every team.
+        for t in persistent.teams:
+            t.wins = 0
+            t.losses = 0
+            t.draws = 0
 
-    scene bg room
+        # Generate the season schedule.
+        schedule = []
+        teams = list(persistent.teams)
+        # Create a double round-robin schedule (each team plays every other team home and away).
+        for i in range(len(teams)):
+            for j in range(i + 1, len(teams)):
+                schedule.append((teams[i], teams[j]))
+                schedule.append((teams[j], teams[i]))
 
-    # スプライト（立ち絵）を表示します。ここではプレースホルダーを使用していますが、
-    # images ディレクトリーに "eileen happy.png" などと命名したファイルを追加すると
-    # 表示することができます。
+        # Shuffle the schedule for variety each season.
+        renpy.random.shuffle(schedule)
 
-    # at ステートメントは画像の表示する位置を調整します。
-    # at center は中央に下揃えで表示します。これは省略しても同じ結果になります。
-    # その他に at right、at left などがデフォルトで定義されています。
+        # Set an initial message for the result display.
+        game_result = "The season is about to begin!"
 
-    show eileen happy at center
-
-    # トランジション（画面遷移効果）を使って表示を画面に反映させます。
-    # 台詞を表示するか with None を使うと、トランジション無しで直ちに表示します。
-
-    with dissolve
-
-    # 音楽を再生します。
-    # game ディレクトリーに "music.ogg" などのファイルを追加すると再生できます。
-
-    # play music "music.ogg"
-
-    # 以下は台詞を表示します。
-
-    e "Ren'Py の新しいゲームを作成しました。"
-
-    e "ストーリー、画像、音楽を追加すれば、世界にリリースすることができます！"
-
-    # return でゲームを終了します。
-
+    # Show the main pennant screen to the player.
+    call screen pennant_screen
     return
 
+label play_next_game:
+    # This block is called when the player clicks "Simulate Next Game".
+    python:
+        # Get the next matchup from the front of the schedule list.
+        home_team, away_team = schedule.pop(0)
+        # Simulate the game and store the outcome string.
+        game_result = simulate_game(home_team, away_team)
+
+    # Re-display the screen to show the updated results and standings.
+    call screen pennant_screen
+    return
+
+label reset_and_start:
+    # This allows the player to restart the season from the end screen.
+    jump start_season
