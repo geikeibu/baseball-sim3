@@ -11,26 +11,25 @@ init python:
         def __init__(self, name, meet, power, run, defense, throwing):
             super(Fielder, self).__init__(name)
             self.position = "Fielder"
-            # Pawapuro-style stats. Using a 1-100 scale for simplicity.
-            self.meet = meet       # ミート (contact hitting)
-            self.power = power     # パワー (power hitting)
-            self.run = run         # 走力 (running speed)
-            self.defense = defense   # 守備力 (fielding ability)
-            self.throwing = throwing # 肩力 (throwing strength)
+            self.meet = meet
+            self.power = power
+            self.run = run
+            self.defense = defense
+            self.throwing = throwing
 
     # A class for pitchers, also inheriting from Player.
     class Pitcher(Player):
         def __init__(self, name, speed, control, stamina, breaking_balls):
             super(Pitcher, self).__init__(name)
             self.position = "Pitcher"
-            self.speed = speed             # 球速 (max fastball velocity)
-            self.control = control         # コントロール (pitching control)
-            self.stamina = stamina         # スタミナ (pitching stamina)
-            # breaking_balls is a dictionary, e.g., {'slider': 4, 'fork': 2}
-            # The key is the pitch name, the value is its effectiveness/break.
+            self.speed = speed
+            self.control = control
+            self.stamina = stamina
             self.breaking_balls = breaking_balls
+            # Add a fatigue attribute, 0 is fully rested, 100 is max fatigue.
+            self.fatigue = 0
 
-    # The Team class now manages the new player types.
+    # The Team class now manages the new player types and rotation.
     class Team:
         def __init__(self, name):
             self.name = name
@@ -38,53 +37,69 @@ init python:
             self.wins = 0
             self.losses = 0
             self.draws = 0
+            # Add a rotation index to track which starter is next.
+            self.rotation_index = 0
 
         def add_player(self, player):
             self.players.append(player)
 
         def get_pitchers(self):
-            """Returns a list of all pitchers on the team."""
             return [p for p in self.players if isinstance(p, Pitcher)]
 
         def get_fielders(self):
-            """Returns a list of all fielders on the team."""
             return [p for p in self.players if isinstance(p, Fielder)]
 
         def get_starting_pitcher(self):
-            """Selects a starting pitcher for a game."""
-            pitchers = self.get_pitchers()
-            if not pitchers:
+            """
+            Selects a starting pitcher based on a rotation and fatigue.
+            A pitcher is considered "rested" if their fatigue is below 40.
+            """
+            # For this simulation, we'll define the first 2 pitchers added as the "starting rotation".
+            starters = [p for p in self.get_pitchers()][:2]
+            if not starters:
                 return None
-            # A real game would have a rotation. For now, we'll pick the one with the highest stamina.
-            # This is a good candidate for future improvement (e.g., tracking pitcher fatigue).
-            return max(pitchers, key=lambda p: p.stamina)
+
+            num_starters = len(starters)
+
+            # Check the rotation up to two full cycles to find a rested pitcher.
+            for _ in range(num_starters * 2):
+                pitcher_to_check = starters[self.rotation_index]
+
+                if pitcher_to_check.fatigue < 40:
+                    # We found a rested pitcher. Select them.
+                    self.rotation_index = (self.rotation_index + 1) % num_starters
+                    return pitcher_to_check
+
+                # This pitcher is fatigued, advance the index and check the next one.
+                self.rotation_index = (self.rotation_index + 1) % num_starters
+
+            # If no pitcher is rested after checking everyone twice,
+            # we make an "emergency start" with the least fatigued pitcher.
+            least_fatigued_pitcher = min(starters, key=lambda p: p.fatigue)
+            # We still advance the rotation index to not get stuck on one tired pitcher.
+            self.rotation_index = (starters.index(least_fatigued_pitcher) + 1) % num_starters
+            return least_fatigued_pitcher
 
         def get_offense_rating(self):
-            """Calculates a general team offense rating based on fielder stats."""
             fielders = self.get_fielders()
             if not fielders:
                 return 0
-            # A weighted average of the team's contact and power hitting.
             avg_meet = sum(f.meet for f in fielders) / len(fielders)
             avg_power = sum(f.power for f in fielders) / len(fielders)
             return (avg_meet * 0.6) + (avg_power * 0.4)
 
         def get_defense_rating(self):
-            """Calculates a general team defense rating based on fielder stats."""
             fielders = self.get_fielders()
             if not fielders:
                 return 0
-            # A weighted average of the team's fielding and throwing ability.
             avg_defense = sum(f.defense for f in fielders) / len(fielders)
             avg_throwing = sum(f.throwing for f in fielders) / len(fielders)
             return (avg_defense * 0.7) + (avg_throwing * 0.3)
 
 # --- Data Initialization ---
-# We will re-populate this with new players in the next step.
 default persistent.teams = []
 
 init python:
-    # This block populates the game with sample teams and players if no persistent data exists.
     if not persistent.teams:
         # --- Create Dragons ---
         dragons = Team("Dragons")
