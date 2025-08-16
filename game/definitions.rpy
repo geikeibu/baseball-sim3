@@ -16,6 +16,18 @@ init python:
             self.run = run
             self.defense = defense
             self.throwing = throwing
+            # Batting stats
+            self.at_bats = 0
+            self.hits = 0
+            self.home_runs = 0
+            self.rbis = 0
+            self.walks = 0
+
+        @property
+        def batting_avg(self):
+            if self.at_bats == 0:
+                return 0.0
+            return float(self.hits) / self.at_bats
 
     # A class for pitchers, also inheriting from Player.
     class Pitcher(Player):
@@ -28,6 +40,23 @@ init python:
             self.breaking_balls = breaking_balls
             # Add a fatigue attribute, 0 is fully rested, 100 is max fatigue.
             self.fatigue = 0
+            # Pitching stats
+            self.wins = 0
+            self.losses = 0
+            self.outs_recorded = 0
+            self.earned_runs = 0
+            self.strikeouts = 0
+            self.walks_issued = 0
+
+        @property
+        def era(self):
+            if self.outs_recorded == 0:
+                return 0.0
+            return (float(self.earned_runs) * 27) / self.outs_recorded # 27 outs = 9 innings
+
+        @property
+        def innings_pitched(self):
+            return float(self.outs_recorded) / 3.0
 
     # The Team class now manages the new player types and rotation.
     class Team:
@@ -134,3 +163,6 @@ init python:
         hawks.add_player(Pitcher(name="H-Pitcher2", speed=142, control=88, stamina=75, breaking_balls={'shuuto': 4}))
 
         persistent.teams.extend([dragons, tigers, lions, hawks])
+
+    if not hasattr(persistent, 'game_history'):
+        persistent.game_history = []
