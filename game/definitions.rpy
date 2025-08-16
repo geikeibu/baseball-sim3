@@ -166,3 +166,9 @@ init python:
 
     if not hasattr(persistent, 'game_history'):
         persistent.game_history = []
+
+    # MVP: Add difficulty settings
+    if not hasattr(persistent, 'hit_level'):
+        persistent.hit_level = 0.25 # 打低/打高
+    if not hasattr(persistent, 'stat_influence'):
+        persistent.stat_influence = 1.0 # 乱数振れ幅

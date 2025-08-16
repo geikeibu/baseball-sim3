@@ -17,26 +17,26 @@ init python:
         Simulates a single at-bat between a batter and a pitcher.
         Returns the outcome of the at-bat as a string.
         """
-        # --- Base Probabilities ---
-        # These are the foundational chances for different events to occur in an at-bat.
+        # --- Base Probabilities (now with difficulty settings) ---
         strikeout_prob = 0.20
         walk_prob = 0.08
-        hit_prob = 0.25
+        hit_prob = persistent.hit_level # Adjustable via options
 
-        # --- Adjust Probabilities based on Player Stats ---
+        # --- Adjust Probabilities based on Player Stats (now with difficulty settings) ---
+        stat_mod = persistent.stat_influence # Adjustable via options
 
         # Pitcher's influence:
         # Higher control reduces walks and hits, increases strikeouts.
-        strikeout_prob += (pitcher.control - 75) * 0.003
-        walk_prob -= (pitcher.control - 75) * 0.002
-        hit_prob -= (pitcher.control - 75) * 0.002
+        strikeout_prob += (pitcher.control - 75) * 0.003 * stat_mod
+        walk_prob -= (pitcher.control - 75) * 0.002 * stat_mod
+        hit_prob -= (pitcher.control - 75) * 0.002 * stat_mod
         # Higher speed increases strikeouts.
-        strikeout_prob += (pitcher.speed - 150) * 0.002
+        strikeout_prob += (pitcher.speed - 150) * 0.002 * stat_mod
 
         # Batter's influence:
         # Higher meet skill reduces strikeouts and increases hits.
-        strikeout_prob -= (batter.meet - 75) * 0.004
-        hit_prob += (batter.meet - 75) * 0.003
+        strikeout_prob -= (batter.meet - 75) * 0.004 * stat_mod
+        hit_prob += (batter.meet - 75) * 0.003 * stat_mod
 
         # --- Determine the At-Bat Outcome ---
         rand_num = random.random()
