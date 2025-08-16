@@ -43,7 +43,9 @@ screen pennant_screen():
             spacing 20
             # Show the "Next Game" button only if there are games left in the schedule.
             if schedule:
-                textbutton "Simulate Next Game" action Call("play_next_game")
+                textbutton "1試合進める" action Call("play_next_game")
+                textbutton "5試合進める" action Call("play_multiple_games", game_count=5)
+                textbutton "シーズン終了まで" action Call("play_multiple_games", game_count=len(schedule))
 
             # Show the "View Log" button if a log exists for the previous game.
             if persistent.last_game_log:
@@ -71,6 +73,29 @@ init python:
                     # Each day of rest reduces fatigue by a set amount.
                     # We use max() to ensure fatigue doesn't drop below 0.
                     pitcher.fatigue = max(0, pitcher.fatigue - 30)
+
+    def _play_one_game():
+        """
+        Helper function to simulate a single game.
+        This contains the logic previously in the play_next_game label.
+        """
+        if not schedule:
+            return
+
+        # First, process a day of rest for all pitchers in the league.
+        rest_all_pitchers()
+
+        # Then, get the next matchup from the front of the schedule list.
+        home_team, away_team = schedule.pop(0)
+        # Simulate the game and store the outcome.
+        sim_result = simulate_game(home_team, away_team)
+
+        # Store the results for display on the screen.
+        # These are global variables, so we need to declare that.
+        global game_result
+        game_result = sim_result["result_str"]
+        persistent.last_game_log = sim_result["game_log"]
+        persistent.last_game_highlights = sim_result["highlights"]
 
 # Default variables that will hold the game's state.
 default game_result = ""
@@ -121,21 +146,23 @@ label start_season:
 label play_next_game:
     # This block is called when the player clicks "Simulate Next Game".
     python:
-        # First, process a day of rest for all pitchers in the league.
-        rest_all_pitchers()
-
-        # Then, get the next matchup from the front of the schedule list.
-        home_team, away_team = schedule.pop(0)
-        # Simulate the game and store the outcome.
-        sim_result = simulate_game(home_team, away_team)
-
-        # Store the results for display on the screen.
-        game_result = sim_result["result_str"]
-        persistent.last_game_log = sim_result["game_log"]
-        persistent.last_game_highlights = sim_result["highlights"]
-
+        _play_one_game()
 
     # Re-display the screen to show the updated results and standings.
+    call screen pennant_screen
+    return
+
+label play_multiple_games(game_count):
+    # This block is called to simulate multiple games at once.
+    python:
+        # Loop for the given number of games.
+        for _ in range(game_count):
+            # If the schedule is empty, stop simulating.
+            if not schedule:
+                break
+            _play_one_game()
+
+    # After simulating, update the screen.
     call screen pennant_screen
     return
 
