@@ -818,6 +818,24 @@ screen preferences():
                             action Preference("all mute", "toggle")
                             style "mute_all_button"
 
+                vbox:
+                    style_prefix "slider"
+                    label _("試合バランス設定")
+                    null height gui.pref_spacing
+
+                    vbox:
+                        label _("打撃レベル (高で打高)")
+                        hbox:
+                            bar value Field(persistent, "hit_level", max_value=0.35, min_value=0.15)
+                            text "{:.3f}".format(persistent.hit_level) yalign 0.5 left_margin 10
+
+                    vbox:
+                        top_margin 10
+                        label _("選手能力影響 (高で能力重視)")
+                        hbox:
+                            bar value Field(persistent, "stat_influence", max_value=2.0, min_value=0.0)
+                            text "{:.2f}".format(persistent.stat_influence) yalign 0.5 left_margin 10
+
 
 style pref_label is gui_label
 style pref_label_text is gui_label_text
