@@ -830,7 +830,7 @@ screen preferences():
                             text "{:.3f}".format(persistent.hit_level) yalign 0.5 xoffset 10
 
                     vbox:
-                        top_margin 10
+                        yoffset 10
                         label _("選手能力影響 (高で能力重視)")
                         hbox:
                             bar value Field(persistent, "stat_influence", max_value=2.0, min_value=0.0)
