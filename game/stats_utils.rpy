@@ -1,5 +1,6 @@
 init python:
     import collections
+    import random
 
     def get_all_players(teams):
         """Extracts all players from all teams."""
@@ -71,6 +72,53 @@ init python:
             leaders.append({
                 "name": player.name,
                 "team": next((t.name for t in teams if player in t.players), ""),
-                "stat_value": getattr(player, stat)
+                "stat_value": getattr(player, stat),
+                "age": player.age
             })
         return leaders
+
+    def process_offseason_changes(teams):
+        """
+        Simulates the off-season: ages up all players and applies stat changes
+        based on their age. Also increments the game year.
+        """
+        all_players = get_all_players(teams)
+
+        # Define stat bounds
+        MIN_STAT = 10
+        MAX_STAT = 99
+
+        for player in all_players:
+            # 1. Age the player
+            player.age += 1
+
+            # 2. Determine stat change based on age
+            change = 0
+            if player.age <= 27: # Growth phase
+                change = random.randint(1, 3)
+            elif player.age >= 34: # Decline phase
+                change = random.randint(-3, -1)
+
+            # If no change, skip to the next player
+            if change == 0:
+                continue
+
+            # 3. Apply changes to stats
+            if isinstance(player, Fielder):
+                player.meet = max(MIN_STAT, min(MAX_STAT, player.meet + change))
+                player.power = max(MIN_STAT, min(MAX_STAT, player.power + change))
+                player.run = max(MIN_STAT, min(MAX_STAT, player.run + change))
+                player.defense = max(MIN_STAT, min(MAX_STAT, player.defense + change))
+                player.throwing = max(MIN_STAT, min(MAX_STAT, player.throwing + change))
+            elif isinstance(player, Pitcher):
+                # For simplicity, we apply the same change to speed, control, and stamina.
+                # A more complex model could have different changes for different stats.
+                player.speed = max(MIN_STAT, min(MAX_STAT, player.speed + change))
+                player.control = max(MIN_STAT, min(MAX_STAT, player.control + change))
+                player.stamina = max(MIN_STAT, min(MAX_STAT, player.stamina + change))
+
+        # 4. Increment the year
+        persistent.current_year += 1
+
+        # This function doesn't need to return anything for now, as it modifies persistent data directly.
+        # The screen action will handle refreshing.

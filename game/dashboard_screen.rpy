@@ -59,21 +59,21 @@ screen dashboard_screen():
                         vbox:
                             label _("打率")
                             for p in batting_avg_leaders:
-                                text "[p.name] ([p.team]): [p.stat_value:.3f]"
+                                text "[p.name] ([p.team], [p.age]歳): [p.stat_value:.3f]"
                             if not batting_avg_leaders:
                                 text "規定打席未到達"
                         # Home Runs
                         vbox:
                             label _("本塁打")
                             for p in hr_leaders:
-                                text "[p.name] ([p.team]): [p.stat_value]"
+                                text "[p.name] ([p.team], [p.age]歳): [p.stat_value]"
                             if not hr_leaders:
                                 text "-"
                         # ERA
                         vbox:
                             label _("防御率")
                             for p in era_leaders:
-                                text "[p.name] ([p.team]): [p.stat_value:.2f]"
+                                text "[p.name] ([p.team], [p.age]歳): [p.stat_value:.2f]"
                             if not era_leaders:
                                 text "規定投球回未到達"
 
@@ -88,6 +88,22 @@ screen dashboard_screen():
                             text game.result_str
                     else:
                         text "試合記録がありません。"
+
+            # --- Season Advancement Section ---
+            frame:
+                style "dash_frame"
+                hbox:
+                    xalign 0.5
+                    yalign 0.5
+                    spacing 40
+
+                    text _("現在: [persistent.current_year]年")
+
+                    textbutton _("次のシーズンへ"):
+                        action [
+                            Function(process_offseason_changes, teams=persistent.teams),
+                            Replay("dashboard_screen")
+                        ]
 
 
 # --- Styling for the new screen ---
