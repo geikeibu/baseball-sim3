@@ -80,7 +80,7 @@ init python:
     def process_offseason_changes(teams):
         """
         Simulates the off-season: ages up players, handles contracts and retirements,
-        applies stat changes, and increments the game year.
+        applies stat changes, calculates finances, and increments the game year.
         """
         retired_players = collections.defaultdict(list)
 
@@ -101,8 +101,8 @@ init python:
                 # 3. Contract Renewal for players with expired contracts
                 if player.contract_years <= 0:
                     player.contract_years = random.randint(1, 4) # Assign new contract
-                    # Adjust salary based on performance/age
-                    player.salary = max(500, player.salary + random.randint(-1000, 2000))
+                    # Use the new salary calculation function
+                    player.salary = _calculate_salary(player.overall)
 
 
                 # 4. Stat changes based on age
@@ -130,6 +130,32 @@ init python:
 
             # Update the team's player list
             team.players = players_to_keep
+
+        # --- Financial Calculations for all teams ---
+        for team in teams:
+            # 1. Calculate Fans based on performance
+            win_pct = 0.0
+            if (team.wins + team.losses) > 0:
+                win_pct = float(team.wins) / (team.wins + team.losses)
+
+            star_players = len([p for p in team.players if p.overall >= 85])
+
+            fan_change = int((win_pct - 0.5) * 200000 + star_players * 25000)
+
+            # Natural regression/progression towards a mean fan base
+            reversion_to_mean = (500000 - team.fans) * 0.1
+
+            team.fans = int(max(100000, team.fans + fan_change + reversion_to_mean))
+
+            # 2. Calculate Income from fans (in 万円)
+            # Assuming average revenue per fan per season is 0.6 万円 (6000 JPY)
+            income = team.fans * 0.6
+
+            # 3. Calculate Expenses (total salary)
+            expenses = sum(p.salary for p in team.players)
+
+            # 4. Update Funds
+            team.funds += (income - expenses)
 
 
         # 5. Increment the year

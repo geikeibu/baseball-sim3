@@ -7,13 +7,13 @@ screen dashboard_screen():
         style_prefix "dash"
 
         # --- Data Loading ---
+        $ player_team = persistent.teams[0]
+        $ total_salary = sum(p.salary for p in player_team.players)
         $ standings = get_standings(persistent.teams)
         $ batting_avg_leaders = get_league_leaders(persistent.teams, "batting_avg")
         $ hr_leaders = get_league_leaders(persistent.teams, "home_runs")
         $ era_leaders = get_league_leaders(persistent.teams, "era")
-        # Assuming the player's team is the first one in the list for "recent games"
-        $ player_team_name = persistent.teams[0].name
-        $ recent_games = [g for g in reversed(persistent.game_history) if g['home_team'] == player_team_name or g['away_team'] == player_team_name]
+        $ recent_games = [g for g in reversed(persistent.game_history) if g['home_team'] == player_team.name or g['away_team'] == player_team.name]
 
 
         # --- Main VBox container ---
@@ -46,6 +46,24 @@ screen dashboard_screen():
                             text "[team.draws]"
                             text "[team.games_behind:.1f]"
                         $ rank += 1
+
+            # --- Team Finances Section ---
+            frame:
+                style "dash_frame"
+                vbox:
+                    label _("チーム財政 ([player_team.name])")
+                    null height 5
+                    hbox:
+                        xfill True
+                        spacing 40
+                        xalign 0.5
+
+                        $ funds_in_oku = player_team.funds / 10000.0
+                        $ salary_in_oku = total_salary / 10000.0
+
+                        text _("資金: [funds_in_oku:.2f]億円")
+                        text _("総年俸: [salary_in_oku:.2f]億円")
+                        text _("年間観客数: [player_team.fans:,]人")
 
             # --- League Leaders Section ---
             frame:
@@ -81,7 +99,7 @@ screen dashboard_screen():
             frame:
                 style "dash_frame"
                 vbox:
-                    label _("直近の試合結果 ([player_team_name])")
+                    label _("直近の試合結果 ([player_team.name])")
                     null height 5
                     if recent_games:
                         for game in recent_games:
