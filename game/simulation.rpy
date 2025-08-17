@@ -12,7 +12,7 @@ init python:
         pitcher_rating = (pitcher.speed * 0.15) + (pitcher.control * 0.4) + (pitcher.stamina * 0.2) + breaking_ball_rating
         return pitcher_rating
 
-    def _simulate_at_bat(batter, pitcher):
+    def _simulate_at_bat(batter, pitcher, batting_team, pitching_team):
         """
         Simulates a single at-bat between a batter and a pitcher.
         Returns the outcome of the at-bat as a string.
@@ -38,6 +38,12 @@ init python:
         strikeout_prob -= (batter.meet - 75) * 0.004 * stat_mod
         hit_prob += (batter.meet - 75) * 0.003 * stat_mod
 
+        # --- Adjust Probabilities based on Team Philosophy ---
+        if pitching_team.philosophy == "defense":
+            hit_prob *= 0.95
+        if batting_team.philosophy == "speed":
+            hit_prob *= 1.05
+
         # --- Determine the At-Bat Outcome ---
         rand_num = random.random()
 
@@ -48,6 +54,11 @@ init python:
         elif rand_num < strikeout_prob + walk_prob + hit_prob:
             # It's a hit! Now determine the type of hit based on power.
             power_rating = (batter.power + pitcher.speed / 10.0) / 100.0
+
+            # Philosophy adjustment for power
+            if batting_team.philosophy == "power":
+                power_rating *= 1.2
+
             hit_rand = random.random()
             if hit_rand < (0.05 * power_rating):
                 return "本塁打"
@@ -91,7 +102,7 @@ init python:
 
             while outs < 3:
                 batter = away_batters[away_batting_order_index]
-                result = _simulate_at_bat(batter, home_pitcher)
+                result = _simulate_at_bat(batter, home_pitcher, away_team, home_team)
                 log_entry = "{}、{}の打席: {}".format(batter.name, away_team.name, result)
                 game_log.append(log_entry)
 
@@ -162,7 +173,7 @@ init python:
 
             while outs < 3:
                 batter = home_batters[home_batting_order_index]
-                result = _simulate_at_bat(batter, away_pitcher)
+                result = _simulate_at_bat(batter, away_pitcher, home_team, away_team)
                 log_entry = "{}、{}の打席: {}".format(batter.name, home_team.name, result)
                 game_log.append(log_entry)
 

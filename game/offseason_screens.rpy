@@ -264,3 +264,40 @@ label start_draft_label:
         start_draft()
     call screen draft_screen
     return
+
+screen philosophy_screen():
+    tag menu
+    use game_menu(_("チーム方針設定"), scroll="viewport"):
+        style_prefix "trade" # Reuse styles from trade screen for consistency
+
+        $ player_team = get_player_team()
+
+        vbox:
+            spacing 15
+            xalign 0.5
+            yalign 0.5
+
+            frame:
+                style "trade_frame"
+                padding (20, 20)
+                vbox:
+                    spacing 15
+                    label _("来シーズンの方針を選択してください")
+
+                    $ current_philosophy_text = {
+                        "balanced": "バランス",
+                        "power": "長打重視",
+                        "speed": "機動力重視",
+                        "defense": "守備重視"
+                    }[player_team.philosophy]
+                    text "現在の方針: [current_philosophy_text]"
+
+                    null height 10
+
+                    hbox:
+                        spacing 20
+                        xalign 0.5
+                        textbutton _("長打重視") action [SetField(player_team, "philosophy", "power"), Hide("philosophy_screen"), Show("philosophy_screen")]
+                        textbutton _("機動力重視") action [SetField(player_team, "philosophy", "speed"), Hide("philosophy_screen"), Show("philosophy_screen")]
+                        textbutton _("守備重視") action [SetField(player_team, "philosophy", "defense"), Hide("philosophy_screen"), Show("philosophy_screen")]
+                        textbutton _("バランス") action [SetField(player_team, "philosophy", "balanced"), Hide("philosophy_screen"), Show("philosophy_screen")]
