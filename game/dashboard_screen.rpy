@@ -89,6 +89,18 @@ screen dashboard_screen():
                     else:
                         text "試合記録がありません。"
 
+            # --- Off-season Activities Section ---
+            frame:
+                style "dash_frame"
+                vbox:
+                    label _("オフシーズン")
+                    null height 5
+                    hbox:
+                        spacing 20
+                        xalign 0.5
+                        textbutton _("トレード") action Show("trade_screen")
+                        textbutton _("ドラフト会議") action Call("start_draft_label")
+
             # --- Season Advancement Section ---
             frame:
                 style "dash_frame"
@@ -102,7 +114,9 @@ screen dashboard_screen():
                     textbutton _("次のシーズンへ"):
                         action [
                             Function(process_offseason_changes, teams=persistent.teams),
-                            Replay("dashboard_screen")
+                            SetField(renpy.store, "trade_feedback_message", ""), # Clear trade feedback
+                            Hide("trade_screen"),
+                            Jump("start_season") # Jump to start the new season
                         ]
 
 
