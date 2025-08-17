@@ -1,6 +1,24 @@
 init python:
     import random
 
+    def _calculate_salary(overall):
+        """
+        Calculates a player's salary based on their overall rating.
+        Salary is in 万円.
+        """
+        if overall < 50:
+            base_salary = 400
+        else:
+            # Exponential growth for higher overall ratings
+            base_salary = 400 + int(((overall - 50) / 10.0) ** 2.5 * 150)
+
+        # Add some randomness
+        random_factor = random.uniform(0.9, 1.1)
+        salary = int(base_salary * random_factor)
+
+        # Round to nearest 10万円 for cleaner numbers, with a minimum of 400.
+        return max(400, round(salary / 10) * 10)
+
     # Base class for all players, containing a name.
     class Player(object):
         def __init__(self, name, age, contract_years=3, salary=5000):
@@ -12,7 +30,6 @@ init python:
     # A class for fielders (position players) inheriting from Player.
     class Fielder(Player):
         def __init__(self, name, age, meet, power, run, defense, throwing, contract_years=3, salary=0):
-            salary = salary or random.randint(500, 8000)
             super(Fielder, self).__init__(name, age, contract_years, salary)
             self.position = "Fielder"
             self.meet = meet
@@ -20,6 +37,11 @@ init python:
             self.run = run
             self.defense = defense
             self.throwing = throwing
+
+            # If no salary is provided, calculate it based on overall stats.
+            if salary == 0:
+                self.salary = _calculate_salary(self.overall)
+
             # Batting stats
             self.at_bats = 0
             self.hits = 0
@@ -41,13 +63,17 @@ init python:
     # A class for pitchers, also inheriting from Player.
     class Pitcher(Player):
         def __init__(self, name, age, speed, control, stamina, breaking_balls, contract_years=3, salary=0):
-            salary = salary or random.randint(500, 8000)
             super(Pitcher, self).__init__(name, age, contract_years, salary)
             self.position = "Pitcher"
             self.speed = speed
             self.control = control
             self.stamina = stamina
             self.breaking_balls = breaking_balls
+
+            # If no salary is provided, calculate it based on overall stats.
+            if salary == 0:
+                self.salary = _calculate_salary(self.overall)
+
             # Add a fatigue attribute, 0 is fully rested, 100 is max fatigue.
             self.fatigue = 0
             # Pitching stats
@@ -76,7 +102,7 @@ init python:
 
     # The Team class now manages the new player types and rotation.
     class Team:
-        def __init__(self, name):
+        def __init__(self, name, initial_funds=100000):
             self.name = name
             self.players = []
             self.wins = 0
@@ -84,6 +110,10 @@ init python:
             self.draws = 0
             # Add a rotation index to track which starter is next.
             self.rotation_index = 0
+
+            # Financials
+            self.funds = initial_funds # 資金 (in 万円, e.g. 100000 is 10億円)
+            self.fans = 500000 # 観客動員数 (人)
 
         def add_player(self, player):
             self.players.append(player)
