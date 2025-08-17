@@ -116,6 +116,7 @@ screen dashboard_screen():
                     hbox:
                         spacing 20
                         xalign 0.5
+                        textbutton _("チーム方針") action Show("philosophy_screen")
                         textbutton _("トレード") action Show("trade_screen")
                         textbutton _("ドラフト会議") action Call("start_draft_label")
 

@@ -115,6 +115,11 @@ init python:
             self.funds = initial_funds # 資金 (in 万円, e.g. 100000 is 10億円)
             self.fans = 500000 # 観客動員数 (人)
 
+            # --- Team Identity ---
+            # 'balanced', 'power', 'speed', 'defense'
+            self.philosophy = "balanced"
+            self.coach = None
+
         def add_player(self, player):
             self.players.append(player)
 
