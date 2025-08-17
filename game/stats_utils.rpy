@@ -79,46 +79,61 @@ init python:
 
     def process_offseason_changes(teams):
         """
-        Simulates the off-season: ages up all players and applies stat changes
-        based on their age. Also increments the game year.
+        Simulates the off-season: ages up players, handles contracts and retirements,
+        applies stat changes, and increments the game year.
         """
-        all_players = get_all_players(teams)
+        retired_players = collections.defaultdict(list)
 
-        # Define stat bounds
-        MIN_STAT = 10
-        MAX_STAT = 99
+        for team in teams:
+            players_to_keep = []
+            for player in team.players:
+                # 1. Age the player
+                player.age += 1
+                player.contract_years -= 1
 
-        for player in all_players:
-            # 1. Age the player
-            player.age += 1
+                # 2. Retirement Logic
+                # Players over 38 with 0 contract years have a high chance of retiring.
+                if player.age > 38 and player.contract_years <= 0:
+                    if random.random() < 0.75: # 75% chance to retire
+                        retired_players[team.name].append(player.name)
+                        continue # Player retires, skip to next player
 
-            # 2. Determine stat change based on age
-            change = 0
-            if player.age <= 27: # Growth phase
-                change = random.randint(1, 3)
-            elif player.age >= 34: # Decline phase
-                change = random.randint(-3, -1)
+                # 3. Contract Renewal for players with expired contracts
+                if player.contract_years <= 0:
+                    player.contract_years = random.randint(1, 4) # Assign new contract
+                    # Adjust salary based on performance/age
+                    player.salary = max(500, player.salary + random.randint(-1000, 2000))
 
-            # If no change, skip to the next player
-            if change == 0:
-                continue
 
-            # 3. Apply changes to stats
-            if isinstance(player, Fielder):
-                player.meet = max(MIN_STAT, min(MAX_STAT, player.meet + change))
-                player.power = max(MIN_STAT, min(MAX_STAT, player.power + change))
-                player.run = max(MIN_STAT, min(MAX_STAT, player.run + change))
-                player.defense = max(MIN_STAT, min(MAX_STAT, player.defense + change))
-                player.throwing = max(MIN_STAT, min(MAX_STAT, player.throwing + change))
-            elif isinstance(player, Pitcher):
-                # For simplicity, we apply the same change to speed, control, and stamina.
-                # A more complex model could have different changes for different stats.
-                player.speed = max(MIN_STAT, min(MAX_STAT, player.speed + change))
-                player.control = max(MIN_STAT, min(MAX_STAT, player.control + change))
-                player.stamina = max(MIN_STAT, min(MAX_STAT, player.stamina + change))
+                # 4. Stat changes based on age
+                change = 0
+                if player.age <= 27: # Growth phase
+                    change = random.randint(1, 3)
+                elif player.age >= 34: # Decline phase
+                    change = random.randint(-3, -1)
 
-        # 4. Increment the year
+                if change != 0:
+                    MIN_STAT = 10
+                    MAX_STAT = 99
+                    if isinstance(player, Fielder):
+                        player.meet = max(MIN_STAT, min(MAX_STAT, player.meet + change))
+                        player.power = max(MIN_STAT, min(MAX_STAT, player.power + change))
+                        player.run = max(MIN_STAT, min(MAX_STAT, player.run + change))
+                        player.defense = max(MIN_STAT, min(MAX_STAT, player.defense + change))
+                        player.throwing = max(MIN_STAT, min(MAX_STAT, player.throwing + change))
+                    elif isinstance(player, Pitcher):
+                        player.speed = max(MIN_STAT, min(MAX_STAT, player.speed + change))
+                        player.control = max(MIN_STAT, min(MAX_STAT, player.control + change))
+                        player.stamina = max(MIN_STAT, min(MAX_STAT, player.stamina + change))
+
+                players_to_keep.append(player)
+
+            # Update the team's player list
+            team.players = players_to_keep
+
+
+        # 5. Increment the year
         persistent.current_year += 1
 
-        # This function doesn't need to return anything for now, as it modifies persistent data directly.
-        # The screen action will handle refreshing.
+        # Store retired players list for potential display later
+        persistent.retired_players_log = retired_players

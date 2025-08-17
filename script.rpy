@@ -55,9 +55,9 @@ screen pennant_screen():
         if not schedule:
             vbox:
                 spacing 15
-                text "Season Finished!" size 28
-                textbutton "Restart Season" action Call("reset_and_start")
-                textbutton "Main Menu" action MainMenu()
+                text "シーズン終了！" size 28
+                textbutton "オフシーズンへ" action Show("dashboard_screen")
+                textbutton "メインメニュー" action MainMenu()
 
 
 # --- Game Logic ---
@@ -106,8 +106,8 @@ default persistent.last_game_highlights = []
 
 # The game's entry point.
 label start:
-    # We immediately jump to the season setup.
-    jump start_season
+    # On game start, show the dashboard.
+    call screen dashboard_screen
 
 label start_season:
     # This block runs at the beginning of each season.
